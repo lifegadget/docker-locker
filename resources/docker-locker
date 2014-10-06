@@ -1,0 +1,38 @@
+#!/bin/bash
+source /usr/local/bin/resty -W 'http://localhost:8091/pools/default'
+
+case "$1" in
+	about)
+		cat /app/resources/docker.txt
+		cat /app/resources/locker.txt
+		echo "";
+		echo "Locker Docker v$LOCKER_VERSION";
+		echo "---------------------";
+		echo "a great place to put your stuff!";
+		echo "";
+	;;
+	load)
+		if [[ "$2" =~ "bitbucket." ]] || [[ "$2" =~ "github." ]];then 
+			echo "- Assuming source type is a git repo";
+			if [ -z "$BRANCH" ];then 
+				BRANCH='master'
+			fi
+			git clone -b $BRANCH $2 /app/data
+			ls -la /app/data
+			storageDir="/app/data/$OFFSET"
+			echo "- linking storage to '$storageDir' directory"
+			ln -s $storageDir /storage
+		elif [[ "$2" =~ ".tar" ]]; then
+			echo "- Assuming source type is a tarball";
+		else
+			echo "- Unknown source type; quitting.";
+			exit 1;
+		fi
+	;;
+	ls)
+		echo "Docker Locker contents:";
+		echo "-----------------------";
+		ls -la /storage/
+		echo "";
+	;;
+esac
