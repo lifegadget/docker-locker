@@ -41,7 +41,11 @@ RUN apt-get install -y libmozjs-24-bin \
 RUN mkdir -p /root/.ssh \ 
 	&& ssh-keyscan bitbucket.org > /root/.ssh/known_hosts \
 	&& ssh-keyscan github.com >> /root/.ssh/known_hosts \
-	&& ssh-keygen -q -t rsa -N '' -f /root/.ssh/container-key 
+	&& ssh-keygen -q -t rsa -N '' -f /root/.ssh/container-key \
+	&& { \
+		echo ""; \
+		echo "IdentityFile /root/.ssh/id_rsa";  \
+	} >> /etc/ssh/ssh_config
 	
 # Create directory structure for volume sharing
 RUN mkdir -p /app \

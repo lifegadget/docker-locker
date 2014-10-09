@@ -10,7 +10,6 @@ function setKeys() {
 		echo "$PRIVATE_KEY" > /root/.ssh/id_rsa
 		chmod 600 /root/.ssh/id_rsa
 		# NOTE: can't get keys with passcodes working at the moment; will come back to this later
-		# there is likely a solution available using "sshpass" -- which is included now -- 
 		sudo ssh-agent -a /tmp/agent.sock
 		export SSH_AUTH_SOCK=/tmp/agent.sock
 		sshpass -p$PASSWORD sudo ssh-add /root/.ssh/id_rsa
@@ -24,11 +23,12 @@ function setKeys() {
 }
 
 function storageListing() {
+	echo "";
 	echo "Docker Locker contents:";
 	echo "-----------------------";
 	ls -la /storage/
 	echo "";
-	echo "Disk Usage:"
+	echo "Disk Usage:";
 	du -s /storage/ 
 }
 
@@ -111,21 +111,16 @@ case "$1" in
 				BRANCH='master'
 			fi
 			git clone -b $BRANCH $2 /app/data
-			storageListing;
+			echo "- Repo has been cloned"
 			echo "";
 			if [ -z "$PREP" ];then
-				allDone;
+				storageListing;
 			else
 				# languageSupport;
 				prepStorage;
-				# cd /app/data
-				ls -l /usr/local/bin
-				# composer.phar install
-				allDone;
+				storageListing;
 			fi
-			# storageDir="/app/data/$OFFSET"
-			# echo "- linking storage to '$storageDir' directory"
-			# ln -s $storageDir /storage
+			allDone;
 		elif [[ "$2" =~ ".tar" ]]; then
 			echo "- Assuming source type is a tarball";
 			echo "- Not yet implemented; exiting ...";
