@@ -1,5 +1,85 @@
 #!/bin/bash
 source /usr/local/bin/resty -W 'http://localhost:8091/pools/default'
+source /etc/bash.bashrc
+
+function setKeys() {
+	if [ -z "$PRIVATE_KEY" ];then
+		cp /root/.ssh/container-key /root/.ssh/id_rsa 
+		cp /root/.ssh/container-key.pub /root/.ssh/id_rsa.pub 
+	else
+		echo "$PRIVATE_KEY" > /root/.ssh/id_rsa
+		chmod 600 /root/.ssh/id_rsa
+		# NOTE: can't get keys with passcodes working at the moment; will come back to this later
+		# there is likely a solution available using "sshpass" -- which is included now -- 
+		sudo ssh-agent -a /tmp/agent.sock
+		export SSH_AUTH_SOCK=/tmp/agent.sock
+		sshpass -p$PASSWORD sudo ssh-add /root/.ssh/id_rsa
+		ssh-keygen -yf /root/.ssh/id_rsa -C "id_rsa_nopass" > /root/.ssh/id_rsa.pub
+		ls -l /root/.ssh
+		echo ""
+		cat /root/.ssh/id_rsa
+		echo ""
+		cat /root/.ssh/id_rsa.pub
+	fi
+}
+
+function storageListing() {
+	echo "Docker Locker contents:";
+	echo "-----------------------";
+	ls -la /storage/
+	echo "";
+	echo "Disk Usage:"
+	du -s /storage/ 
+}
+
+function prepStorage() {
+	evilCommands=`echo $PREP | jsawk -n 'out(this)' | cut -d '"' -f 2 | cut -d "'" -f 2`
+
+	# IFS=$'\n';
+	cd /app/data
+	cmd=( composer install )
+	"${cmd[@]}"
+	# composer.phar install
+	# for cmd in $evilCommands;do
+	# 	echo "";
+	# 	echo "Executing: $cmd"
+	# 	echo "";
+	# 	cd /app/data;
+	# 	`"$cmd"`
+	# done
+	unset IFS;
+}
+
+# Note: this isn't being used currently as these dependencies are statically included in 
+# the docker image. Keeping this here in case there's a desire to introduce run-time optionality back in.
+function languageSupport() {
+	if [[ "$SUPPORT" == *composer* ]];then
+		if [ -z `which php` ];then
+			# install Ubuntu sourced dependencies
+			apt-get install -yqq php5 curl
+			cd /app
+			# install Composer
+			curl -sS https://getcomposer.org/installer | php
+			mv composer.phar /usr/local/bin/composer
+			chmod +x /usr/local/bin/composer
+		fi
+	fi
+	if [[ "$SUPPORT" == *bower* ]];then
+		if [ -z `which npm` ];then
+			apt-get install -yqq curl
+			curl -sL https://deb.nodesource.com/setup | sudo bash -
+			apt-get install -yqq nodejs
+		fi
+		if [ -z `which bower`]; then
+			npm install bower
+		fi
+	fi
+}
+
+function allDone() {
+	echo "- All done. Locker ready for use.";
+	echo "";
+}
 
 case "$1" in
 	about)
@@ -10,29 +90,60 @@ case "$1" in
 		echo "---------------------";
 		echo "a great place to put your stuff!";
 		echo "";
+		echo "Container Public Key:"
+		echo "---------------------"
+		cat /root/.ssh/container-key.pub
+	;;
+	public-key)
+		setKeys;
+		ls -l /usr/local/bin
+		if [ -e /root/.ssh/id_rsa.pub ];then 
+			cat /root/.ssh/id_rsa.pub
+		else
+			cat /root/.ssh/container-key.pub
+		fi
 	;;
 	load)
+		setKeys;
 		if [[ "$2" =~ "bitbucket." ]] || [[ "$2" =~ "github." ]];then 
 			echo "- Assuming source type is a git repo";
 			if [ -z "$BRANCH" ];then 
 				BRANCH='master'
 			fi
 			git clone -b $BRANCH $2 /app/data
-			ls -la /app/data
-			storageDir="/app/data/$OFFSET"
-			echo "- linking storage to '$storageDir' directory"
-			ln -s $storageDir /storage
+			storageListing;
+			echo "";
+			if [ -z "$PREP" ];then
+				allDone;
+			else
+				# languageSupport;
+				prepStorage;
+				# cd /app/data
+				ls -l /usr/local/bin
+				# composer.phar install
+				allDone;
+			fi
+			# storageDir="/app/data/$OFFSET"
+			# echo "- linking storage to '$storageDir' directory"
+			# ln -s $storageDir /storage
 		elif [[ "$2" =~ ".tar" ]]; then
 			echo "- Assuming source type is a tarball";
+			echo "- Not yet implemented; exiting ...";
+			exit 1;
 		else
 			echo "- Unknown source type; quitting.";
 			exit 1;
 		fi
 	;;
 	ls)
-		echo "Docker Locker contents:";
-		echo "-----------------------";
-		ls -la /storage/
+		storageListing;
+	;;
+	pull)
+		echo "Pulling Latest from Repo";
+		cd /storage/
+		git pull
 		echo "";
+		echo "Contents are now:"
+		ls -la /storage/
 	;;
 esac

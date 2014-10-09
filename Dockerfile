@@ -5,8 +5,13 @@ MAINTAINER LifeGadget <contact-us@lifegadget.co>
 ENV DEBIAN_FRONTEND noninteractive
 ENV LOCKER_VERSION 0.0.1
 RUN apt-get update \
-	&& apt-get install -y librtmp0 python-httplib2 language-pack-en-base vim wget git \
-	&& dpkg-reconfigure locales
+	&& apt-get install -yqq vim wget curl git subversion sshpass \
+	&& apt-get install -yqq nodejs npm \
+	&& npm install -g bower \
+	&& apt-get install -yqq php5 \
+	&& echo `which php`
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin 
+RUN ln -s /usr/local/bin/composer.phar /usr/local/bin/composer
 
 # Add a nicer bashrc config
 ADD https://raw.githubusercontent.com/lifegadget/bashrc/master/snippets/history.sh /etc/bash.history
@@ -32,6 +37,12 @@ RUN apt-get install -y libmozjs-24-bin \
 		echo ""; \
 	} >> /etc/bash.bashrc
 	
+# Setup SSH permissions
+RUN mkdir -p /root/.ssh \ 
+	&& ssh-keyscan bitbucket.org > /root/.ssh/known_hosts \
+	&& ssh-keyscan github.com >> /root/.ssh/known_hosts \
+	&& ssh-keygen -q -t rsa -N '' -f /root/.ssh/container-key 
+	
 # Create directory structure for volume sharing
 RUN mkdir -p /app \
 	&& mkdir -p /app/data \
@@ -39,7 +50,6 @@ RUN mkdir -p /app \
 	&& mkdir -p /app/conf \
 	&& ln -s /app/data/$OFFSET /storage
 VOLUME ["/storage"]
-VOLUME ["/app/data"]
 
 # Add bootstrapper and other resources
 COPY resources/docker-locker /usr/local/bin/docker-locker

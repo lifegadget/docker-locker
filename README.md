@@ -57,6 +57,32 @@ Assume that ...
 
 	> this is probably not a very good example, we promise to improve the example in the future when we care more ... in the mean time don't hesitate sending us a PR with a better one.
 
+### Private Repos ###
+
+We can't always be public so for those private moments in repo-land we need a way to authorize our locker to do our bidding. The most convenient way to do this when not travelling with the Docker crowd is to generate a SSH keypair and then add your public key to your repository manager (e.g., github or bitbucket). The problem is that your docker-locker does not have visibility into your host machine's private keys and therefore something else must be done. Fear not young Jedi fighter, the locker has two ways of navigating this:
+
+- Borrow Host's Key:
+
+	You can simply pass your host's private key in as a parameter to the `load` command. For instance:
+
+		sudo git run lifegadget/docker-locker run \
+			load http://github/some-killer-app/nodejs \
+			-e PRIVATE_KEY=$(< ~/.ssh/id_rsa)
+		
+- Register Container:
+
+	Far less convenient but each Locker auto-generates a public/private keypairing and you can get your public keypair -- which is unique to a given build of the locker -- by running:
+
+		sudo git run lifegadget/docker-locker public-key
+
+	With key in hand you can head to your favourite repository and add this public key to the authorisation chain for a repo. With this approach you don't need to worry about passing the `PRIVATE_KEY` environment variable, all is taken care of for you.
+
 ## Other Commands
 
-The nice thing about Docker containers is that they are perpetual, meaning they don't need to always be running to keep their state on shared volumes. In almost all cases you'll start using `docker-locker` by loading something into it. Equally as likely you'll use this data volume in other containers with the `--`
+The nice thing about Docker containers is that they are perpetual, meaning they don't need to always be running to keep their state on shared volumes. In almost all cases you'll start using **docker-locker** by loading something into it using the already covered `load` command. Equally as likely you'll use the data volume in the *locker* to feed other containers with the `--volume-from` switch. Beyond these two core use-cases there are other commands that are supported too:
+
+- `about` - just a simple about message which includes the version of the Locker being used (as well as the public key of the container)
+- `public-key` - the public key for a given container build (note: this will be shared across all lockers for a given build of the locker)
+- `pull` - if your locker is repo-based then this will refresh it with a `git pull`
+- `refresh` - refreshes the content from source (pull for repo, redownload for tarball) and runs the "PREP" if environment variable is set
+
