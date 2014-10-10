@@ -25,7 +25,7 @@ In many cases you make just be happy to use things out-of-the-box but the *locke
 - `BRANCH` - allows you specify which branch/tag you want to pull from your git repo. By default it will assume *master* but choose what you like. 
 - `ENTRY_ALIAS` - often your storage root will contain both your source and distribution (or public) files, in cases where your webserver might expose your content at a particular name -- let's use "api" as an example -- you'll often want to have the generic name of "public" or "dist" be replaced with a name that mimics the functional name. This is helpful when you're using reverse-proxy solutions like NGINX to expose the locker's distribution. To use this simply state the name of the alias and the locker will automagically create a symbolic link to the appopriate folder:
 
-		sudo git run lifegadget/docker-locker run \
+		sudo git run lifegadget/docker-locker  \
 			load git@github.com/badass/some-killer-app \ 
 			-e ENTRY_ALIAS_='api' 
 

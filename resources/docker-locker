@@ -84,6 +84,35 @@ function entryAlias() {
 	fi
 }
 
+function updatePackageManagers() {
+	echo "";
+	echo "Updating dependencies managed by package managers"
+	echo "";
+	cd /app/data
+	if [ -e "/app/data/composer.json" ]; then
+		echo "- found Composer; updating ...";
+		composer update
+	fi
+	if [ -e "/app/data/bower.json" ]; then
+		echo "- found Bower; updating ...";
+		bower update
+	fi
+	if [ -e "/app/data/package.json" ]; then
+		echo "- found NPM; updating ...";
+		npm update
+	fi
+	echo "";
+	echo "All package managers have been updated!"
+}
+
+function catalogFile() {
+	if [ -f "/app/data/$1" ]; then
+		cat "/app/data/$1"
+	else
+		echo "Couldn't find $1";	
+	fi
+}
+
 function allDone() {
 	echo "";
 	echo "";
@@ -106,7 +135,6 @@ case "$1" in
 	;;
 	public-key)
 		setKeys;
-		ls -l /usr/local/bin
 		if [ -e /root/.ssh/id_rsa.pub ];then 
 			cat /root/.ssh/id_rsa.pub
 		else
@@ -121,7 +149,7 @@ case "$1" in
 				BRANCH='master'
 			fi
 			git clone -b $BRANCH $2 /app/data
-			echo "- Repo has been cloned"
+			echo "- Repo has been cloned; branch set to "$BRANCH
 			echo "";
 			if [ -n "$PREP" ];then
 				prepStorage;
@@ -141,12 +169,20 @@ case "$1" in
 	ls)
 		storageListing "$2";
 	;;
+	cat)
+		catalogFile "$2";
+	;;
 	pull)
+		setKeys;
 		echo "Pulling Latest from Repo";
 		cd /storage/
 		git pull
 		echo "- git repo has been pulled"
 		storageListing;
+	;;
+	update-dep)
+		setKeys;
+		updatePackageManagers;
 	;;
 	status)
 		echo "";
