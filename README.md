@@ -22,8 +22,19 @@ How great is that? Well it's ok but it gets better.
 
 In many cases you make just be happy to use things out-of-the-box but the *locker* provides you some flexibility for your flexible lifestyle needs:
 
-- `BRANCH` - allows you specify which branch/tag you want to pull from your git repo. By default it will assume 'master' but choose what you like. 
-- `OFFSET` - sometimes you'll want the repo checked out but the volume you're wanting to share is actually not stemming from the root of the source. Not a problem sir, you da boss, just specify a string offset from the root of your repo and the volume share will start off your offset. 
+- `BRANCH` - allows you specify which branch/tag you want to pull from your git repo. By default it will assume *master* but choose what you like. 
+- `ENTRY_ALIAS` - often your storage root will contain both your source and distribution (or public) files, in cases where your webserver might expose your content at a particular name -- let's use "api" as an example -- you'll often want to have the generic name of "public" or "dist" be replaced with a name that mimics the functional name. This is helpful when you're using reverse-proxy solutions like NGINX to expose the locker's distribution. To use this simply state the name of the alias and the locker will automagically create a symbolic link to the appopriate folder:
+
+		sudo git run lifegadget/docker-locker run \
+			load git@github.com/badass/some-killer-app \ 
+			-e ENTRY_ALIAS_='api' 
+
+	creates a symbolic link to the `/dist` or `/public` folder (depending on which exists):
+
+		lrwxrwxrwx  1 root root    14 Oct 10 08:02 api -> /storage/dist
+		
+	Handy, right? Let's you more easily have a single `root` directive in your NGINX config. 
+
 - `PREP` - so maybe you're one of those "I'm never happy types", always asking for something more, maybe what you want is to do something bespoke to your repo? Sound familiar? Well then, you'll pleased to know that here in the *locker* this sort of selfish behaviour is not only expected but rewarded. Here's how it works, you just specify an array of commands you'd like run over your *thingy* and once it's been put into the container we'll do your evil bidding. 
 
 ### Load Examples ###
@@ -37,9 +48,9 @@ Assume that ...
 	You love JavaScript so much you want to see it on the server as well as the client. It's your right. We reserve no judgement. So anyway, you've got this killer REST API built using Node and it lives on GitHub at `http://github/some-killer-app/nodejs`. You believe that living on the edge is the only place to live so obviously the `master` branch is far too passé so instead you want the locker to hold the `this-shits-bleeding` branch. So here's how you get that shit out the door and into the locker:
 
 		sudo git run lifegadget/docker-locker run \
-			load http://github/some-killer-app/nodejs \
+			load git@github.com/badass/some-killer-nodejs-app \
 			-e BRANCH='this-shits-bleeding' \
-			-e OFFSET='public' \
+			-e ENTRY_ALIAS='bleeder' \
 			-e PREP='["npm install", "bower update"]' \
 			--name nodeApp
 		sudo git run -d lifegadget/docker-nginx run \
