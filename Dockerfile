@@ -52,7 +52,7 @@ RUN mkdir -p /app \
 	&& mkdir -p /app/data \
 	&& mkdir -p /app/resources \
 	&& mkdir -p /app/conf \
-	&& ln -s /app/data/$OFFSET /storage
+	&& ln -s /app/data /storage
 VOLUME ["/storage"]
 
 # Add bootstrapper and other resources
