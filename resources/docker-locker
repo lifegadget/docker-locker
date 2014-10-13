@@ -166,6 +166,10 @@ case "$1" in
 			exit 1;
 		fi
 	;;
+	empty)
+		echo "Creating an empty data locker";
+		allDone;
+	;;
 	ls)
 		storageListing "$2";
 	;;
