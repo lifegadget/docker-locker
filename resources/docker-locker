@@ -2,6 +2,20 @@
 source /usr/local/bin/resty -W 'http://localhost:8091/pools/default'
 source /etc/bash.bashrc
 
+function logIt() {
+	logFile="/storage/locker.log"
+	timestamp=$( date )
+	if [ -z "$2" ];then
+		severity="INFO"
+	else
+		severity="$2"
+	fi
+	hostname=`hostname`
+	facility_label="user-level"
+	facility=1
+	echo "{ \"timestamp\": \"$timestamp\", \"host\": \"${hostname}\", \"server_software\": [ ], \"facility_label\": \"${facility_label}\", \"severity\":\"$severity\", \"message\": \"$1\" }" >> $logFile
+}
+
 function setKeys() {
 	if [ -z "$PRIVATE_KEY" ];then
 		cp /root/.ssh/container-key /root/.ssh/id_rsa 
@@ -105,7 +119,7 @@ function updatePackageManagers() {
 	echo "All package managers have been updated!"
 }
 
-function catalogFile() {
+function catFile() {
 	if [ -f "/app/data/$1" ]; then
 		cat "/app/data/$1"
 	else
@@ -144,6 +158,7 @@ case "$1" in
 	load)
 		setKeys;
 		if [[ "$2" =~ "bitbucket." ]] || [[ "$2" =~ "github." ]];then 
+			logIt "Loading locker with git repo: $2"
 			echo "- Assuming source type is a git repo";
 			if [ -z "$BRANCH" ];then 
 				BRANCH='master'
@@ -174,7 +189,7 @@ case "$1" in
 		storageListing "$2";
 	;;
 	cat)
-		catalogFile "$2";
+		catFile "$2";
 	;;
 	pull)
 		setKeys;
@@ -192,8 +207,18 @@ case "$1" in
 		echo "";
 		echo "Git repo's status:";
 		cd /app/data
-		git status
+		git status 
 		echo "";
+		git branch -v --color=always
+		echo "";
+	;;
+	branch)
+		cd /app/data
+		git branch | cut -d " " -f 2
+	;;
+	hashtag)
+		cd /app/data
+		git branch -v | cut -d " " -f 3
 	;;
 	
 esac
