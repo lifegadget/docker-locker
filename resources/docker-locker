@@ -14,6 +14,7 @@ function logIt() {
 	facility_label="user-level"
 	facility=1
 	echo "{ \"timestamp\": \"$timestamp\", \"host\": \"${hostname}\", \"server_software\": [ ], \"facility_label\": \"${facility_label}\", \"severity\":\"$severity\", \"message\": \"$1\" }" >> $logFile
+	echo $1;
 }
 
 function setKeys() {
@@ -158,13 +159,13 @@ case "$1" in
 	load)
 		setKeys;
 		if [[ "$2" =~ "bitbucket." ]] || [[ "$2" =~ "github." ]];then 
-			logIt "Loading locker with git repo: $2"
 			echo "- Assuming source type is a git repo";
 			if [ -z "$BRANCH" ];then 
 				BRANCH='master'
 			fi
 			git clone -b $BRANCH $2 /app/data
-			echo "- Repo has been cloned; branch set to "$BRANCH
+			# Note: can NOT log data until git has been cloned into /app/data or the existance of the log file will interfere with git
+			logIt "Locker has been loaded with git repo: $2"
 			echo "";
 			if [ -n "$PREP" ];then
 				prepStorage;
